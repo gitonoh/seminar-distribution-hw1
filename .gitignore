@@ -5,9 +5,6 @@
 .Ruserdata
 .Renviron
 
-# Outputs / build artifacts
-*.pdf
-
 # OS files
 .DS_Store
 Thumbs.db
@@ -16,3 +13,5 @@ Thumbs.db
 .vscode/
 
 # Optional: add other large or personal files here
+.csv
+.png
