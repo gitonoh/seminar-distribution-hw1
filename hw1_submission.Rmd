@@ -5,7 +5,6 @@ date: "`r Sys.Date()`"
 output:
   pdf_document:
     toc: true
-    number_sections: true
 fontsize: 11pt
 ---
 
@@ -17,7 +16,9 @@ library(mitools)
 library(dineq)
 library(Hmisc)
 library(convey)
-
+```
+## Data Import and Preparation
+```{r}
 scf_dta_import <-
   function(this_url) {
     this_tf <- tempfile()
@@ -42,8 +43,8 @@ scf <- scf_summary_2022 %>%
 scf <- scf %>% mutate(wgt5 = wgt * 5,
                       counts = 5)
 ```
-# Weights, Implications, and Replicate weights
-(a)  Step by Step calculation of mean household wealth (networth) and standard errors by hand (i.e. without survey package in R):
+## 1. Weights, Implications, and Replicate weights
+### (a) Step by Step calculation of mean household wealth (networth) and standard errors by hand (i.e. without survey package in R):
 ```{r}
 # (i) Unweighted classic
 net <- scf$networth
@@ -217,7 +218,7 @@ tab <- tab %>%
 
 knitr::kable(tab, format = "markdown")
 ```
-(b): Why do we use weights, why implicates, why replicate weights? How do the means and standard errors change between the steps and why?
+###(b): Why do we use weights, why implicates, why replicate weights? How do the means and standard errors change between the steps and why?
 
 - Sampling weights (`wgt`): adjust for unequal selection probabilities, nonresponse and post-stratification so that estimates generalize to the target population. Using weights changes the estimand from a sample-average to a population-average and typically reduces the influence of over-sampled subgroups (e.g., very wealthy households in SCF).
 
@@ -235,7 +236,7 @@ knitr::kable(tab, format = "markdown")
 
 - (v) Rubin + replicates (combined): Point estimate = average of implicate-specific replicate-based estimates (same estimand as (ii) aggregated over imputations). SE = average replicate-based within-imputation variance plus (1 + 1/M) times the between-imputation variance. This combined SE captures both design-based sampling variability and imputation uncertainty and is the most appropriate (and usually largest) SE among the steps.
 
-(c): Now use the survey and mitools package to calculate the correct mean and standard error.
+###(c): Now use the survey and mitools package to calculate the correct mean and standard error.
 ```{r}
 # Build a list of implicates
 # each implicate is a dataframe with replicate weights merged
@@ -263,8 +264,8 @@ mi_mean <- MIcombine(svy_mean_list)
 
 cat(sprintf('Estimate = %g, SE = %g\n', coef(mi_mean), SE(mi_mean)))
 ```
-# Application to population groups (can use packages!):
-(a) Calculate mean household wealth and standard error by gender of household head (hhsex) and by race (racecl5) (separately) and the weighted number of observations by group. Shortly explain what you find.
+## 2. Application to population groups (can use packages!):
+### (a) Calculate mean household wealth and standard error by gender of household head (hhsex) and by race (racecl5) (separately) and the weighted number of observations by group. Shortly explain what you find.
 ```{r}
 # By hhsex
 mi_hhsex_mean <- MIcombine(with(scf_design, svyby(~ networth, 
@@ -315,7 +316,7 @@ race_tab <- data.frame(
 )
 knitr::kable(race_tab, format = "markdown")
 ```
-(b) Choose another characteristic of households (which has not yet been used in class and makes sense in this context) and show mean household wealth and 95% confidence intervals in a bar chart by this characteristic and shortly explain what you find.
+### (b) Choose another characteristic of households (which has not yet been used in class and makes sense in this context) and show mean household wealth and 95% confidence intervals in a bar chart by this characteristic and shortly explain what you find.
 ```{r}
 # Compute mean(networth) and 95% CIs by a chosen household characteristic
 # The script picks the first available variable from a candidate list 
@@ -347,7 +348,7 @@ if(is.null(found_var)){
   }
 }
 
-# Prepare replicate weights like in hw1_solutions.R
+# Prepare replicate weights
 rw <- scf_rw_2022_raw %>% mutate(across(everything(), ~ ifelse(is.na(.), 0, .)))
 wt_cols <- grep('^wt1b', names(rw), value = TRUE)
 mm_cols <- grep('^mm', names(rw), value = TRUE)
@@ -415,7 +416,7 @@ ggplot(df_out, aes(x = reorder(group, estimate), y = estimate/1e6)) +
 ```
 Owner households have a substantially higher mean net worth (~$1.15M) than non-owners (~$0.49M). The 95% CIs do not overlap, indicating a statistically meaningful difference in mean net worth between owners and non-owners in these SCF estimates. Note that homeowners both tend to have higher accumulated wealth and are oversampled in SCF designs; the reported SEs account for design and imputation uncertainty. Smaller subgroup sample sizes and the heavy-tailed wealth distribution mean these CI widths should be considered when comparing subgroups.
 
-(c) Now choose another variable (should be inequality-related) that you want to compare by the characteristic in 2b. Again create a similar barchart.
+### (c) Now choose another variable (should be inequality-related) that you want to compare by the characteristic in 2b. Again create a similar barchart.
 ```{r}
 # Compute mean(log(networth)) by homeownership (own) using survey + mitools
 # We'll compute log(networth) after shifting to positive values
